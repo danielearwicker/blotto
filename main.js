@@ -1,6 +1,8 @@
 const FsObject = require("./FsObject").FsObject;
 const findLinks = require("./findLinks").findLinks;
 
+const blottoDir = new FsObject(process.argv[2]);
+
 /**
  * 
  * @param {Date} date 
@@ -20,7 +22,7 @@ const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frida
 
 const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-const sourceDir = new FsObject("../NXG.wiki/people/Daniel-Earwicker/_source");
+const sourceDir = blottoDir.at("_source");
 
 const blogDates = [];
 
@@ -72,7 +74,7 @@ function formatPrettyDate(date) {
     return `${dayOfWeek}, ${date.getDate()} ${month} ${date.getFullYear()}`;
 }
 
-const prettyDir = new FsObject("../NXG.wiki/people/Daniel-Earwicker/Blog");
+const prettyDir = blottoDir.at("Blog");
 
 function convertLinks(text, rootPath) {
     const outputText = [];
@@ -164,12 +166,12 @@ const recentPages = blogDates.slice(blogDates.length - 10);
 recentPages.reverse();
 
 for (const recentPage of recentPages) {
-    addSnippet(recentPage, 0, homePage, ".");
+    addSnippet(recentPage, 0, homePage, "Blog");
 }
 
-homePage.push(linkTopics.map(l => `[${l.text}](links/${l.id})`).join(" | "));
+homePage.push(linkTopics.map(l => `[${l.text}](Blog/links/${l.id})`).join(" | "));
 
-prettyDir.parent.at("Blog.md").text = homePage.join("\n\n");
+blottoDir.at("Blog.md").text = homePage.join("\n\n");
 
 const firstYear = blogDates[0].getFullYear();
 const lastYear = blogDates[blogDates.length - 1].getFullYear();
