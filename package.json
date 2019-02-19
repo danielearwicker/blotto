@@ -1,0 +1,32 @@
+{
+  "name": "blotto",
+  "version": "1.1.0",
+  "description": "Generates a navigable blog: (simple markdown) -> (conveniently linked markdown)",
+  "main": "main.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "node built/test/findLinks.test.js"
+  },
+  "bin": {
+    "blotto": "bin/blotto.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danielearwicker/blotto.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/danielearwicker/blotto/issues"
+  },
+  "homepage": "https://github.com/danielearwicker/blotto#readme",
+  "dependencies": {
+    "@types/chokidar": "^1.7.5",
+    "chokidar": "^2.1.2"
+  }
+}

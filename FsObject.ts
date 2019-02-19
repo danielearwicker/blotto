@@ -1,14 +1,11 @@
-const fs = require("fs");
-const path = require("path");
+import * as fs from "fs";
+import * as path from "path";
 
-class FsObject {
+export class FsObject {
 
-    /**
-     * @param {string} relPath 
-     */
-    constructor(relPath) {
-        this.relPath = relPath;
-    }
+    private _stat: fs.Stats | undefined;
+
+    constructor(public readonly relPath: string) { }
 
     get contents() {
         return fs.readdirSync(this.relPath)
@@ -55,23 +52,15 @@ class FsObject {
         return fs.readFileSync(this.relPath, "utf8");
     }
 
-    set text(contents) {
+    set text(contents: string) {
         fs.writeFileSync(this.relPath, contents);
     }
 
-    /**
-     * @param {string} name 
-     */
-    at(name) {
+    at(name: string) {
         return new FsObject(path.join(this.relPath, name));
     }
 
-    /** 
-     * @param {FsObject} destination 
-     */
-    moveTo(destination) {
+    moveTo(destination: FsObject) {
         fs.renameSync(this.relPath, destination.relPath);
     }
 }
-
-exports.FsObject = FsObject;

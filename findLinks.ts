@@ -1,7 +1,12 @@
 function doNothing() {}
 
-function findLinks(text, plain, link) {
+export type FindLinkCallback = (value: string, line: number) => void;
 
+export function findLinks(
+    text: string, 
+    plain: FindLinkCallback | undefined,
+    link: FindLinkCallback | undefined
+) {
     plain = plain || doNothing;
     link = link || doNothing;
 
@@ -11,7 +16,7 @@ function findLinks(text, plain, link) {
     let line = 0;
     let indented = 0;
     let tripleTicks = 0;
-    let inCodeBlock = 0;
+    let inCodeBlock = false;
 
     for (let i = 0; i < text.length; i++) {
         const c = text[i];
@@ -69,5 +74,3 @@ function findLinks(text, plain, link) {
         }
     }
 }
-
-exports.findLinks = findLinks;
