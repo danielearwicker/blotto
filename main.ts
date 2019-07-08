@@ -247,6 +247,7 @@ function publish() {
     generate();
 
     const commands = [
+        "git pull",
         "git add .",
         "git commit -m Published",
         "git push"
