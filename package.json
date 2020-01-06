@@ -27,6 +27,7 @@
   "homepage": "https://github.com/danielearwicker/blotto#readme",
   "dependencies": {
     "@types/chokidar": "^1.7.5",
-    "chokidar": "^2.1.2"
+    "chokidar": "^2.1.2",
+    "typescript": "^3.7.4"
   }
 }
