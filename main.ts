@@ -3,6 +3,7 @@ import { findLinks } from "./findLinks";
 import * as chokidar from "chokidar";
 import { execSync } from "child_process";
 import { EOL } from "os";
+import { createHash } from "crypto";
 
 function formatDate(date: Date) {
     const year = date.getFullYear() + "";
@@ -66,7 +67,92 @@ function formatPrettyDate(date: Date) {
     return `${dayOfWeek}, ${date.getDate()} ${month} ${date.getFullYear()}`;
 }
 
-function convertLinks(links: LinkMap, text: string, rootPath: string) {
+function generateDiagrams(text: string, owner: FsObject): string {
+
+    // extract chunks of lines beginning with '::: mermaid' and ending with ':::'
+    const lines = [];
+    let diagram: string[] | undefined = undefined;
+    
+    const requiredFiles: string[] = [];
+    const diagramsDir = owner.parent.at(`${owner.title}-diagrams`);
+
+    for (const line of text.split("\n")) {
+        if (!diagram) {
+            if (line.trim() === "::: mermaid") {
+                diagram = [];
+            } else {
+                lines.push(line);
+            }
+        } else {
+            if (line.trim() === ":::") {
+                const diagramText = diagram.join("\n");
+                const diagramHash = createHash("sha256");
+                diagramHash.update(diagramText);
+
+                const options = "-t dark -b transparent";
+                diagramHash.update(options);
+
+                const diagramTitle = diagramHash.digest("hex");
+                const diagramSource = `${diagramTitle}.mer`;
+                const diagramImage = `${diagramTitle}.png`;
+
+                if (!diagramsDir.exists || !diagramsDir.at(diagramImage).exists) {
+                    const sourcePath = diagramsDir.asDirectory.at(diagramSource);
+                    sourcePath.text = diagramText;
+
+                    try {
+                        const command = [
+                            "node", `${__dirname}/../node_modules/@mermaid-js/mermaid-cli/index.bundle.js`, 
+                            "-i", sourcePath.relPath, 
+                            "-o", diagramsDir.at(diagramImage).relPath,
+                            options
+                        ].join(" ");
+
+                        execSync(command, {
+                            cwd: blottoDir.relPath, 
+                            stdio: ["ignore", "inherit", "inherit"] 
+                        });
+                        
+                        requiredFiles.push(diagramImage);
+
+                    } catch (x) {
+                        console.error(x);                        
+                    }
+                } else {
+                    requiredFiles.push(diagramImage);
+                }
+
+                lines.push(`![${diagramImage}](${diagramImage})`);
+                diagram = undefined;
+            } else {
+                diagram.push(line);
+            }
+        }
+    }
+
+    if (diagramsDir.exists) {
+        for (const junkFile of diagramsDir.contents) {
+            if (!requiredFiles.includes(junkFile.name)) {
+                junkFile.deleteFile();
+            }
+        }
+
+        if (requiredFiles.length === 0) {
+            diagramsDir.deleteAll();
+        }
+    }
+
+    return lines.join("\n");
+}
+
+function convertLinks(
+    links: LinkMap,
+    text: string,
+    rootPath: string,
+    diagramOwner: FsObject
+) {
+    text = generateDiagrams(text, diagramOwner);
+
     const outputText: string[] = [];
 
     findLinks(
@@ -93,7 +179,14 @@ function makeLink(caption: string, date: Date) {
     return `[${caption}](../../${formatDate(date).path})`;
 }
 
-function addSnippet(getLink: LinkMap, blogDate: Date, lineNumber: number, parts: string[], rootPath: string) {    
+function addSnippet(
+    getLink: LinkMap, 
+    blogDate: Date, 
+    lineNumber: number, 
+    parts: string[], 
+    rootPath: string,
+    diagramOwner: FsObject
+) {
     parts.push(`## ${formatPrettyDate(blogDate)}`);
 
     let snippetLines = getDateFile(sourceDir, blogDate).text
@@ -111,7 +204,7 @@ function addSnippet(getLink: LinkMap, blogDate: Date, lineNumber: number, parts:
         snippetLines.length = blankLine;
     }
 
-    parts.push(convertLinks(getLink, snippetLines.join(EOL), rootPath));
+    parts.push(convertLinks(getLink, snippetLines.join(EOL), rootPath, diagramOwner));
     parts.push(`[More...](${rootPath}/${formatDate(blogDate).path})`);
 }
 
@@ -151,9 +244,11 @@ function generate() {
         const next = makeLink("Next >", blogDates[i + 1]);
         const links = [previous, next].filter(x => x).join(" | ");
 
-        const content = convertLinks(linkMap, getDateFile(sourceDir, today).text, "../..");
+        const target = getDateFile(prettyDir, today);
 
-        getDateFile(prettyDir, today).text = `# ${header}${EOL}${links}${EOL}${EOL}${content}`;
+        const content = convertLinks(linkMap, getDateFile(sourceDir, today).text, "../..", target);
+
+        target.text = `# ${header}${EOL}${links}${EOL}${EOL}${content}`;
     }
 
     const linksDir = prettyDir.asDirectory.at("links").asDirectory;
@@ -167,11 +262,13 @@ function generate() {
         var mentions = Object.keys(link.mentions);
         mentions.sort();
 
+        const target = linksDir.at(link.id + ".md");
+
         for (const mention of mentions) {
-            addSnippet(linkMap, new Date(mention), link.mentions[mention], parts, "..");
+            addSnippet(linkMap, new Date(mention), link.mentions[mention], parts, "..", target);
         }
 
-        linksDir.at(link.id + ".md").text = parts.join(EOL + EOL);
+        target.text = parts.join(EOL + EOL);
     }
 
     const homePage = [
@@ -181,13 +278,15 @@ function generate() {
     const recentPages = blogDates.slice(blogDates.length - 10);
     recentPages.reverse();
 
+    const target = blottoDir.at("Blog.md");
+
     for (const recentPage of recentPages) {
-        addSnippet(linkMap, recentPage, 0, homePage, "Blog");
+        addSnippet(linkMap, recentPage, 0, homePage, "Blog", target);
     }
 
     homePage.push(linkTopics.map(l => `[${l.text}](Blog/links/${l.id})`).join(" | "));
 
-    blottoDir.at("Blog.md").text = homePage.join(EOL + EOL);
+    target.text = homePage.join(EOL + EOL);
 
     const firstYear = blogDates[0].getFullYear();
     const lastYear = blogDates[blogDates.length - 1].getFullYear();
@@ -266,6 +365,8 @@ function publish() {
 }
 
 export function watch() {
+    console.log(`Watching for changes in ${sourceDir.relPath}`);
+
     var watcher = chokidar.watch(sourceDir.relPath, { 
         persistent: true,
         ignoreInitial: true,

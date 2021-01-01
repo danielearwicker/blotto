@@ -19,12 +19,16 @@ export class FsObject {
         return this._stat;
     }
 
+    get exists() {
+        return fs.existsSync(this.relPath);
+    }
+
     get isDirectory() {
-        return this.stat.isDirectory();
+        return this.exists && this.stat.isDirectory();
     }
 
     get asDirectory() {
-        if (!fs.existsSync(this.relPath)) {
+        if (!this.exists) {
             fs.mkdirSync(this.relPath);
         }
         return this;
@@ -62,5 +66,26 @@ export class FsObject {
 
     moveTo(destination: FsObject) {
         fs.renameSync(this.relPath, destination.relPath);
+    }
+
+    deleteFile() {
+        fs.unlinkSync(this.relPath);
+    }
+
+    deleteDirectory() {
+        fs.rmdirSync(this.relPath);
+    }
+
+    deleteAll() {
+        if (this.exists) {
+            if (this.isDirectory && !this.stat.isSymbolicLink()) {
+                for (const child of this.contents) {
+                    child.deleteAll();
+                }
+                this.deleteDirectory();
+            } else {
+                this.deleteFile();
+            }
+        }
     }
 }

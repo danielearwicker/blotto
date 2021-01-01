@@ -26,6 +26,7 @@
   },
   "homepage": "https://github.com/danielearwicker/blotto#readme",
   "dependencies": {
+    "@mermaid-js/mermaid-cli": "^8.8.4-1",
     "@types/chokidar": "^1.7.5",
     "chokidar": "^2.1.2",
     "typescript": "^3.7.4"
