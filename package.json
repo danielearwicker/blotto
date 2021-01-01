@@ -1,6 +1,6 @@
 {
   "name": "blotto",
-  "version": "1.2.0",
+  "version": "1.4.0",
   "description": "Generates a navigable blog: (simple markdown) -> (conveniently linked markdown)",
   "main": "main.js",
   "directories": {
@@ -9,6 +9,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
+    "prepare": "npm run build",
     "test": "node built/test/findLinks.test.js"
   },
   "bin": {

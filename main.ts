@@ -5,6 +5,10 @@ import { execSync } from "child_process";
 import { EOL } from "os";
 import { createHash } from "crypto";
 
+const mermaid = require.resolve("@mermaid-js/mermaid-cli/index.bundle.js");
+
+const diagramFormat = "svg";
+
 function formatDate(date: Date) {
     const year = date.getFullYear() + "";
     const month = ((date.getMonth() + 1) + "").padStart(2, "0");
@@ -94,7 +98,7 @@ function generateDiagrams(text: string, owner: FsObject): string {
 
                 const diagramTitle = diagramHash.digest("hex");
                 const diagramSource = `${diagramTitle}.mer`;
-                const diagramImage = `${diagramTitle}.png`;
+                const diagramImage = `${diagramTitle}.${diagramFormat}`;
 
                 if (!diagramsDir.exists || !diagramsDir.at(diagramImage).exists) {
                     const sourcePath = diagramsDir.asDirectory.at(diagramSource);
@@ -102,7 +106,7 @@ function generateDiagrams(text: string, owner: FsObject): string {
 
                     try {
                         const command = [
-                            "node", `${__dirname}/../node_modules/@mermaid-js/mermaid-cli/index.bundle.js`, 
+                            "node", mermaid, 
                             "-i", sourcePath.relPath, 
                             "-o", diagramsDir.at(diagramImage).relPath,
                             options
@@ -122,7 +126,7 @@ function generateDiagrams(text: string, owner: FsObject): string {
                     requiredFiles.push(diagramImage);
                 }
 
-                lines.push(`![${diagramImage}](${diagramImage})`);
+                lines.push(`![${diagramImage}](./${diagramsDir.name}/${diagramImage})`);
                 diagram = undefined;
             } else {
                 diagram.push(line);
