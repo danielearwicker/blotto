@@ -1,6 +1,6 @@
 {
   "name": "blotto",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Generates a navigable blog: (simple markdown) -> (conveniently linked markdown)",
   "main": "main.js",
   "directories": {

@@ -90,7 +90,7 @@ function generateDiagrams(text: string, owner: FsObject): string {
         } else {
             if (line.trim() === ":::") {
                 if (diagram[0].match(/^\s*graph\s+/)) {
-                    lines.push(...diagram);
+                    lines.push("::: mermaid", ...diagram, ":::");
                 } else {
                     const diagramText = diagram.join("\n");
                     const diagramHash = createHash("sha256");
