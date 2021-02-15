@@ -74,7 +74,7 @@ function formatPrettyDate(date: Date) {
 function generateDiagrams(text: string, owner: FsObject): string {
 
     // extract chunks of lines beginning with '::: mermaid' and ending with ':::'
-    const lines = [];
+    const lines: string[] = [];
     let diagram: string[] | undefined = undefined;
     
     const requiredFiles: string[] = [];
@@ -89,44 +89,48 @@ function generateDiagrams(text: string, owner: FsObject): string {
             }
         } else {
             if (line.trim() === ":::") {
-                const diagramText = diagram.join("\n");
-                const diagramHash = createHash("sha256");
-                diagramHash.update(diagramText);
-
-                const options = "-t dark -b transparent";
-                diagramHash.update(options);
-
-                const diagramTitle = diagramHash.digest("hex");
-                const diagramSource = `${diagramTitle}.mer`;
-                const diagramImage = `${diagramTitle}.${diagramFormat}`;
-
-                if (!diagramsDir.exists || !diagramsDir.at(diagramImage).exists) {
-                    const sourcePath = diagramsDir.asDirectory.at(diagramSource);
-                    sourcePath.text = diagramText;
-
-                    try {
-                        const command = [
-                            "node", mermaid, 
-                            "-i", sourcePath.relPath, 
-                            "-o", diagramsDir.at(diagramImage).relPath,
-                            options
-                        ].join(" ");
-
-                        execSync(command, {
-                            cwd: blottoDir.relPath, 
-                            stdio: ["ignore", "inherit", "inherit"] 
-                        });
-                        
-                        requiredFiles.push(diagramImage);
-
-                    } catch (x) {
-                        console.error(x);                        
-                    }
+                if (diagram[0].match(/^\s*graph\s+/)) {
+                    lines.push(...diagram);
                 } else {
-                    requiredFiles.push(diagramImage);
-                }
+                    const diagramText = diagram.join("\n");
+                    const diagramHash = createHash("sha256");
+                    diagramHash.update(diagramText);
 
-                lines.push(`![${diagramImage}](./${diagramsDir.name}/${diagramImage})`);
+                    const options = "-t dark -b transparent";
+                    diagramHash.update(options);
+
+                    const diagramTitle = diagramHash.digest("hex");
+                    const diagramSource = `${diagramTitle}.mer`;
+                    const diagramImage = `${diagramTitle}.${diagramFormat}`;
+
+                    if (!diagramsDir.exists || !diagramsDir.at(diagramImage).exists) {
+                        const sourcePath = diagramsDir.asDirectory.at(diagramSource);
+                        sourcePath.text = diagramText;
+
+                        try {
+                            const command = [
+                                "node", mermaid, 
+                                "-i", sourcePath.relPath, 
+                                "-o", diagramsDir.at(diagramImage).relPath,
+                                options
+                            ].join(" ");
+
+                            execSync(command, {
+                                cwd: blottoDir.relPath, 
+                                stdio: ["ignore", "inherit", "inherit"] 
+                            });
+                            
+                            requiredFiles.push(diagramImage);
+
+                        } catch (x) {
+                            console.error(x);                        
+                        }
+                    } else {
+                        requiredFiles.push(diagramImage);
+                    }
+
+                    lines.push(`![${diagramImage}](./${diagramsDir.name}/${diagramImage})`);
+                }
                 diagram = undefined;
             } else {
                 diagram.push(line);
