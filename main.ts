@@ -4,10 +4,12 @@ import * as chokidar from "chokidar";
 import { execSync } from "child_process";
 import { EOL } from "os";
 import { createHash } from "crypto";
+import path from "path";
 
-const mermaid = require.resolve("@mermaid-js/mermaid-cli/index.bundle.js");
+const mermaidMain = require.resolve("@mermaid-js/mermaid-cli");
+const mermaid = path.join(path.dirname(mermaidMain), "cli.js");
 
-const diagramFormat = "svg";
+const diagramFormat = "png";
 
 function formatDate(date: Date) {
     const year = date.getFullYear() + "";
@@ -96,7 +98,7 @@ function generateDiagrams(text: string, owner: FsObject): string {
                     const diagramHash = createHash("sha256");
                     diagramHash.update(diagramText);
 
-                    const options = "-t dark -b transparent";
+                    const options = "-t dark -b black";
                     diagramHash.update(options);
 
                     const diagramTitle = diagramHash.digest("hex");
@@ -114,6 +116,8 @@ function generateDiagrams(text: string, owner: FsObject): string {
                                 "-o", diagramsDir.at(diagramImage).relPath,
                                 options
                             ].join(" ");
+
+                            console.log("execSync", command);
 
                             execSync(command, {
                                 cwd: blottoDir.relPath, 
